@@ -1,0 +1,7 @@
+#include"k.h"
+
+int main(){
+  int c=khp("localhost",5001);                         //connect
+  k(-c,"`trade insert(14:34:56.789;`IBM;99.54;300)",(K)0);//insert
+  k(c,"",(K)0); // flush                              
+  return 0;}
