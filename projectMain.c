@@ -70,9 +70,9 @@ while (go==0){
 	saveGen(tableName, saveName);
         printf("checking saveName: %s", saveName); getchar();
 	k(-c,saveName,(K)0);
-	char saveFile [30];
-	strcpy (saveFile, "save `");
-	strcat (saveFile, tableName);
+	//char saveFile [30];
+	//strcpy (saveFile, "save `");
+	//strcat (saveFile, tableName);
 	int saveRate=0;
 
 	while (go==0){
@@ -100,8 +100,10 @@ while (go==0){
 		price= atof(priceS);  // does this work?
 		printf("price is = %f\n", price); 
 
-		K row = knk(3, ks((S)"XMR"), kf(price), kt(timee));
-		k(c, "{[x] `XMR_2018 insert x}", row, (K)0);
+		K row = knk(3, ks((S) sym), kf(price), kt(timee));
+		k(c, ".u.upd", ks((S) tableName), row, (K) 0);
+		
+		/*k(c, "{[x] `XMR_2018 insert x}", row, (K)0);
 		
 		if (saveRate==10){
 			k(c, saveFile, (K) 0);
@@ -109,13 +111,14 @@ while (go==0){
 			printf("should be saved to: %s\n", saveFile); getchar();
 			saveRate=0;
 		}
-		
-		saveRate++;
+		saveRate++;*/
+		r0(c);
 		sleep (refresh);
 	}
 	
-	k(c, saveFile, (K) 0);
-	k(c, "", (K)0);
+	kclose(c);
+	/*k(c, saveFile, (K) 0);
+	k(c, "", (K)0);*/
 }
 return 0;
 
