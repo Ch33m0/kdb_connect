@@ -12,32 +12,33 @@ void curl_write(void *ptr, size_t size, size_t nmemb, void *userp){
 	data=ptr;
 }
 
-void nameGen (char *sym, char *date, char *tableName){
+void nameGen (char *sym, char *year, char *month, char *day, char *tableName){
 	char res [15];
-        strcpy(res, sym);
+    strcpy(res, sym);
 	strcat(res, "_");
-//	strcat(res, date);
-	strcat(res,"2018"); // use this as example, because the hyphens in the API date are causing problems in KDB
+	strcat(res, year);
+	strcat(res, ".");
+	strcat(res, month);
+	strcat(res, ".");
+	strcat(res, day);
 	strcpy(tableName, res);
 }
 
 void saveGen (char *input, char *saveName){
 	char res [70];
-        strcpy(res, input);
+    strcpy(res, input);
 	strcat(res, ":([]sym:`symbol$(); price:`float$(); time:`time$())");
 	strcpy(saveName, res);
 }
-
-
 
 
 int main () {
 
 	int c=khp("localhost", 5001);
 	char *url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=XMR&tsyms=CAD";
-	char *priceS; char *date;
+	char *priceS; char year[4]; char month[2]; char day[2];
 	float price;
-	int timee=0; int lastTime;//needs to be milliseconds since midnight
+	int timee=0; int lastTime;//needs to be milliseconds since midnight for KDB+
 	int go=0; int go2=0; int refresh = 5; char tableName[15]; char saveName[60];
 	char *sym="XMR";	
 	char *conversion= "CAD"; //not necessary to do this, since it's already set in the string var "url"
@@ -51,30 +52,34 @@ int main () {
 	
 while (go==0){
 	
-	curl_easy_setopt(curl, CURLOPT_URL, "http://worldclockapi.com/api/json/est/now");
+	/* curl_easy_setopt(curl, CURLOPT_URL, "http://worldclockapi.com/api/json/est/now");
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
 	curl_easy_perform(curl);
 	curl_easy_reset(curl);
 	obj= json_tokener_parse(data);
 	json_object *dtime = json_object_object_get(obj, "currentDateTime");
 	date= json_object_get_string(dtime);
-	date [10]= '\0'; // I think this will be reight
-	printf("check1: %s", date); getchar();
-	nameGen (sym, date, tableName);// how to get date data into a string??
-        printf("checking sym, date: %s, %s", sym, date); getchar();        
-	printf("checking tableName: %s", tableName); getchar();
+	date [10]= '\0'; 
+	year[0]= date [0]; year[1]= date [1]; year[2]= date [2]; year[3]= date [3];
+	month[0]= date [4]; month[1]= date [5]; day [0]= date[6]; day[1]= date [7]; */
+	t = time(NULL);
+        tm = *localtime(&t);
+	sprintf(year, "%d%", tm.tm_year); sprintf(month, "%d%", tm.tm_mon);  sprintf(day, "%d%", tm.tm_mday); 
+	nameGen (sym, year, month, day, tableName);      
+	printf("checking tableName: %s", tableName); 
 	saveGen(tableName, saveName);
         printf("checking saveName: %s", saveName); getchar();
 	k(-c,saveName,(K)0);
-	printf("date is: %s", date);
-	getchar();
-	int i;
+	char saveFile [30];
+	strcpy (saveFile, "save `");
+	strcat (saveFile, tableName);
+	int saveRate=0;
 
-	for (i=0; i<5 ; i++){
+	while (go==0){
 
 		lastTime= timee;
 		t = time(NULL);
-        	tm = *localtime(&t);
+     	        tm = *localtime(&t);
 		curl_easy_setopt(curl, CURLOPT_URL, url);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
 		curl_easy_perform(curl);
@@ -98,24 +103,20 @@ while (go==0){
 		K row = knk(3, ks((S)"XMR"), kf(price), kt(timee));
 		k(c, "{[x] `XMR_2018 insert x}", row, (K)0);
 		
-		/*char saveFile [30];
-		strcpy (saveFile,"save `");
-		strcat (saveFile, tableName);
-		k(c,saveFile,(K)0); // shouldnt do this each time.. look into this
-		k(c,"",(K)0);*/
-	sleep (refresh);
+		if (saveRate==10){
+			k(c, saveFile, (K) 0);
+			k(c, "", (K)0);
+			printf("should be saved to: %s\n", saveFile); getchar();
+			saveRate=0;
+		}
+		
+		saveRate++;
+		sleep (refresh);
 	}
-	char saveFile [30];
-	strcpy (saveFile, "save `");
-	strcat (saveFile, tableName);
+	
 	k(c, saveFile, (K) 0);
 	k(c, "", (K)0);
-	printf("should be saved to: %s\n", saveFile); getchar();
 }
 return 0;
 
 }
-
-
-
-
