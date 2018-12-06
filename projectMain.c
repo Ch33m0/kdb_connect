@@ -51,9 +51,9 @@ int main () {
 	time_t t = time(NULL);
         struct tm tm = *localtime(&t);
 	
-	K result; 
-	K row = knk(saveRate, ktn(KS, saveRate), ktn(KF, saveRate), ktn(KT, saveRate));
-	
+	K result; K row;
+	int q;	
+
 while (go==0){
 	
 	t = time(NULL);
@@ -68,12 +68,14 @@ while (go==0){
 	printf("checking tableName: %s\n", tableName); 
 	saveGen(tableName, saveName);
     printf("checking saveName: %s\n", saveName); 
-	result= k(c,saveName,(K)0);
+	result=	k(c,saveName,(K)0);
     printf("checking response from q: %d\n", result->t);
-    int count=0;
 
 	while (go==0){
-		
+
+	row = knk (saveRate, ktn(KS, saveRate), ktn(KF, saveRate), ktn(KT, saveRate));
+	
+	for (q=0; q< saveRate; q++){	
 		lastTime= timee;
 		t = time(NULL);
      	tm = *localtime(&t);
@@ -97,31 +99,30 @@ while (go==0){
 		price= atof(priceS);  // does this work?
 		printf("sym, price, time = %s, %f, %d\n", sym, price, timee); 
 
-		//row = knk(3, ks((S) sym), kf(price), kt(timee));
-		kS(kK(row)[0][count]= sym;
-		kF(kK(row)[1][count]= price;
-		kT(kK(row)[2][count]= timee;
+	       // row = knk(3, ks((S) sym), kf(price), kt(timee));
+		kS(kK(row)[0])[q]= sym;
+		kF(kK(row)[1])[q]= price;
+		kI(kK(row)[2])[q]= timee;
 
-		printf("checking response from q: %d\n", result->t);
-		count++;
+		sleep (refresh);
+
+}
 		
-		if (count==saveRate){
+			printf("about to save"); getchar();
 			result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
 			printf("checking response from q: %d\n", result->t);
-			result =k(c, "save", ks((S) tableNameCpy, (K) 0); 
+			printf("insert worked"); getchar();
+			result =k(c, "save", ks((S) tableNameCpy), (K) 0); 
 			printf("checking response from q: %d\n", result->t);
-			count=0;
-		}
+			r0(row);
 		
-		sleep (refresh);
 	}
 	
 	r0(result);
-	k(c, "save", ks((S) tableNameCpy, (K) 0);
+	k(c, "save", ks((S) tableNameCpy), (K) 0);
 	kclose(c);
 	printf("done!\n");
 }
 return 0;
 
 }
-© 2018 GitHub, Inc.
