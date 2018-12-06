@@ -39,10 +39,11 @@ int main () {
 	char *priceS; char year[6]; char month[3]; char day[3];
 	float price; int yearr; int monthh;
 	int timee=0; int lastTime;//needs to be milliseconds since midnight for KDB+
-	int go=0; int go2=0; int refresh = 2; char tableName[15]; char saveName[60]; char tableNameCpy[15];
+	int go=0; int go2=0; char tableName[15]; char saveName[60]; char tableNameCpy[15];
 	char *sym="XMR";	
 	char *conversion= "CAD"; //not necessary to do this, since it's already set in the string var "url"
-	int saveRate=6;  //saveRate*refresh = time between each batch insert 
+	int saveRate=6;  
+	int refresh = 2;
 	
 	CURL *curl;
 	curl = curl_easy_init();
