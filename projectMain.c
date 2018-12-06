@@ -53,6 +53,7 @@ int main () {
 	
 	K result; K row;
 	int q;	
+	int flag=0;
 
 while (go==0){
 	
@@ -73,7 +74,7 @@ while (go==0){
 
 	while (go==0){
 
-	row = knk (saveRate, ktn(KS, saveRate), ktn(KF, saveRate), ktn(KT, saveRate));
+	row = knk (3, ktn(KS, saveRate), ktn(KF, saveRate), ktn(KT, saveRate));
 	
 	for (q=0; q< saveRate; q++){	
 		lastTime= timee;
@@ -86,7 +87,7 @@ while (go==0){
 		
 		timee= (((tm.tm_hour*60)+tm.tm_min)*60+tm.tm_sec)*1000; // check this one to make sure its right
 		printf("system time (hour) is: %d\n", tm.tm_hour); 
-		if (timee<lastTime) { break;} // if time resets, it is a new day
+		if (timee<lastTime) { flag=1; break;} // if time resets, it is a new day, set flag and beak out of for loop
 		printf("timee= %d\n", timee);		
 		
 		obj= json_tokener_parse(data);
@@ -106,18 +107,29 @@ while (go==0){
 
 		sleep (refresh);
 
-}
-		
-			printf("about to save"); getchar();
-			result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
-			printf("checking response from q: %d\n", result->t);
-			printf("insert worked"); getchar();
-			result =k(c, "save", ks((S) tableNameCpy), (K) 0); 
-			printf("checking response from q: %d\n", result->t);
-			r0(row);
-		
 	}
-	
+			
+		if (flag==1) {
+			int i; 
+			if (q>0){ //move elements from incomplete item "row" into table one by one so they are not lost
+				for (i=0; i< q; i++){
+					K rowX = knk(3, ks((S) kS(kK(row)[0])[i]), kf(kF(kK(row)[1])[i]), kt(kI(kK(row)[2])[i]));
+					result = k(c, "insert", ks((S) tableNameCpy), rowX, (K) 0);
+				}
+				result =k(c, "save", ks((S) tableNameCpy), (K) 0); 
+		        }		
+		flag=0;  //reset flag variable
+		break;		
+		}
+			
+		printf("about to save"); getchar();
+		result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
+		printf("checking response from q: %d\n", result->t);
+		printf("insert worked"); getchar();
+		result =k(c, "save", ks((S) tableNameCpy), (K) 0); 
+		printf("checking response from q: %d\n", result->t);
+
+	}	
 	r0(result);
 	k(c, "save", ks((S) tableNameCpy), (K) 0);
 	kclose(c);
