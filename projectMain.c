@@ -37,11 +37,12 @@ int main () {
 	int c=khp("localhost", 5001);
 	char *url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=XMR&tsyms=CAD";
 	char *priceS; char year[6]; char month[3]; char day[3];
-	float price; int yearr;
+	float price; int yearr; int monthh;
 	int timee=0; int lastTime;//needs to be milliseconds since midnight for KDB+
 	int go=0; int go2=0; int refresh = 2; char tableName[15]; char saveName[60]; char tableNameCpy[15];
 	char *sym="XMR";	
 	char *conversion= "CAD"; //not necessary to do this, since it's already set in the string var "url"
+	int saveRate=6;  //saveRate*refresh = time between each batch insert 
 	
 	CURL *curl;
 	curl = curl_easy_init();
@@ -50,37 +51,32 @@ int main () {
 	time_t t = time(NULL);
         struct tm tm = *localtime(&t);
 	
-	K result; K row;
+	K result; 
+	K row = knk(saveRate, ktn(KS, saveRate), ktn(KF, saveRate), ktn(KT, saveRate));
 	
 while (go==0){
 	
 	t = time(NULL);
-        tm = *localtime(&t);
-	yearr= tm.tm_year; yearr+=1900; printf("checking integer year: %d\n", yearr); getchar();
-	sprintf(year, "%d", yearr); sprintf(month, "%d", tm.tm_mon);  sprintf(day, "%d", tm.tm_mday); 
+    tm = *localtime(&t);
+	yearr= tm.tm_year; yearr+=1900; printf("checking integer year: %d\n", yearr); getchar(); // need to adjust given date
+	monthh= tm.tm_mon; monthh++; if(monthh==13){ monthh=1; } //month given is one year behind
+	sprintf(year, "%d", yearr); sprintf(month, "%d", monthh);  sprintf(day, "%d", tm.tm_mday); 
 	printf("SYSTEM: year, month, day: %d, %d, %d\n", tm.tm_year, tm.tm_mon, tm.tm_mday);
 	printf("STRING_CONV: year, month, day: %s, %s, %s\n", year, month, day);
 	nameGen (sym, year, month, day, tableName);      
 	strcpy(tableNameCpy, tableName);
 	printf("checking tableName: %s\n", tableName); 
 	saveGen(tableName, saveName);
-        printf("checking saveName: %s\n", saveName); 
+    printf("checking saveName: %s\n", saveName); 
 	result= k(c,saveName,(K)0);
- printf("checking response from q: %d\n", result->t);
-   r0(result);
-	char saveFile [30]; strcpy (saveFile, "save`"); strcat (saveFile, tableNameCpy);
-	printf("what is tableNameCpy rn?: %s\n", tableNameCpy);
-	printf("checking saveFile: %send\n", saveFile); getchar();
-	result= k(c, saveFile, (K)0);	
- printf("checking response from q: %d\n", result->t);
-	r0(result);
-int saveRate=0;
+    printf("checking response from q: %d\n", result->t);
+    int count=0;
 
 	while (go==0){
 		
 		lastTime= timee;
 		t = time(NULL);
-     	        tm = *localtime(&t);
+     	tm = *localtime(&t);
 		curl_easy_setopt(curl, CURLOPT_URL, url);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
 		curl_easy_perform(curl);
@@ -101,28 +97,31 @@ int saveRate=0;
 		price= atof(priceS);  // does this work?
 		printf("sym, price, time = %s, %f, %d\n", sym, price, timee); 
 
-		row = knk(3, ks((S) sym), kf(price), kt(timee));
-		result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
+		//row = knk(3, ks((S) sym), kf(price), kt(timee));
+		kS(kK(row)[0][count]= sym;
+		kF(kK(row)[1][count]= price;
+		kT(kK(row)[2][count]= timee;
 
- printf("checking response from q: %d\n", result->t);
-		r0(result);		
-
+		printf("checking response from q: %d\n", result->t);
+		count++;
 		
-/*		if (saveRate==3){
-			result=k(c, saveFile, (K) 0); r0(result);
- printf("checking response from q: %d\n", result->t);
-			printf("should be saved to: %s\n", saveFile); getchar();	
-			saveRate=0;
-		}*/
-		saveRate++;
+		if (count==saveRate){
+			result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
+			printf("checking response from q: %d\n", result->t);
+			result =k(c, "save", ks((S) tableNameCpy, (K) 0); 
+			printf("checking response from q: %d\n", result->t);
+			count=0;
+		}
+		
 		sleep (refresh);
 	}
 	
-	k(c, saveFile, (K) 0);
-//	k(c, "", (K)0);
+	r0(result);
+	k(c, "save", ks((S) tableNameCpy, (K) 0);
 	kclose(c);
 	printf("done!\n");
 }
 return 0;
 
 }
+© 2018 GitHub, Inc.
