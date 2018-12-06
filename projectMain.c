@@ -130,11 +130,11 @@ while (go==0){
 		printf("checking response from q: %d\n", result->t);
 
 	}	
-	r0(result);
-	k(c, "save", ks((S) tableNameCpy), (K) 0);
-	kclose(c);
-	printf("done!\n");
 }
-return 0;
 
+r0(result);
+k(c, "save", ks((S) tableNameCpy), (K) 0);
+kclose(c);
+printf("done!\n");
+return 0;
 }
