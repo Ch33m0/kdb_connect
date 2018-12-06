@@ -14,19 +14,19 @@ void curl_write(void *ptr, size_t size, size_t nmemb, void *userp){
 
 void nameGen (char *sym, char *year, char *month, char *day, char *tableName){
 	char res [15];
-    strcpy(res, sym);
+        strcpy(res, sym);
 	strcat(res, "_");
 	strcat(res, year);
-	strcat(res, ".");
+	strcat(res, "_");
 	strcat(res, month);
-	strcat(res, ".");
+	strcat(res, "_");
 	strcat(res, day);
 	strcpy(tableName, res);
 }
 
 void saveGen (char *input, char *saveName){
-	char res [70];
-    strcpy(res, input);
+	char res [60];
+        strcpy(res, input);
 	strcat(res, ":([]sym:`symbol$(); price:`float$(); time:`time$())");
 	strcpy(saveName, res);
 }
@@ -36,10 +36,10 @@ int main () {
 
 	int c=khp("localhost", 5001);
 	char *url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=XMR&tsyms=CAD";
-	char *priceS; char year[4]; char month[2]; char day[2];
-	float price;
+	char *priceS; char year[6]; char month[3]; char day[3];
+	float price; int yearr;
 	int timee=0; int lastTime;//needs to be milliseconds since midnight for KDB+
-	int go=0; int go2=0; int refresh = 5; char tableName[15]; char saveName[60];
+	int go=0; int go2=0; int refresh = 2; char tableName[15]; char saveName[60]; char tableNameCpy[15];
 	char *sym="XMR";	
 	char *conversion= "CAD"; //not necessary to do this, since it's already set in the string var "url"
 	
@@ -50,33 +50,34 @@ int main () {
 	time_t t = time(NULL);
         struct tm tm = *localtime(&t);
 	
+	K result; K row;
+	
 while (go==0){
 	
-	/* curl_easy_setopt(curl, CURLOPT_URL, "http://worldclockapi.com/api/json/est/now");
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write);
-	curl_easy_perform(curl);
-	curl_easy_reset(curl);
-	obj= json_tokener_parse(data);
-	json_object *dtime = json_object_object_get(obj, "currentDateTime");
-	date= json_object_get_string(dtime);
-	date [10]= '\0'; 
-	year[0]= date [0]; year[1]= date [1]; year[2]= date [2]; year[3]= date [3];
-	month[0]= date [4]; month[1]= date [5]; day [0]= date[6]; day[1]= date [7]; */
 	t = time(NULL);
         tm = *localtime(&t);
-	sprintf(year, "%d%", tm.tm_year); sprintf(month, "%d%", tm.tm_mon);  sprintf(day, "%d%", tm.tm_mday); 
+	yearr= tm.tm_year; yearr+=1900; printf("checking integer year: %d\n", yearr); getchar();
+	sprintf(year, "%d", yearr); sprintf(month, "%d", tm.tm_mon);  sprintf(day, "%d", tm.tm_mday); 
+	printf("SYSTEM: year, month, day: %d, %d, %d\n", tm.tm_year, tm.tm_mon, tm.tm_mday);
+	printf("STRING_CONV: year, month, day: %s, %s, %s\n", year, month, day);
 	nameGen (sym, year, month, day, tableName);      
-	printf("checking tableName: %s", tableName); 
+	strcpy(tableNameCpy, tableName);
+	printf("checking tableName: %s\n", tableName); 
 	saveGen(tableName, saveName);
-        printf("checking saveName: %s", saveName); getchar();
-	k(-c,saveName,(K)0);
-	//char saveFile [30];
-	//strcpy (saveFile, "save `");
-	//strcat (saveFile, tableName);
-	int saveRate=0;
+        printf("checking saveName: %s\n", saveName); 
+	result= k(c,saveName,(K)0);
+ printf("checking response from q: %d\n", result->t);
+   r0(result);
+	char saveFile [30]; strcpy (saveFile, "save`"); strcat (saveFile, tableNameCpy);
+	printf("what is tableNameCpy rn?: %s\n", tableNameCpy);
+	printf("checking saveFile: %send\n", saveFile); getchar();
+	result= k(c, saveFile, (K)0);	
+ printf("checking response from q: %d\n", result->t);
+	r0(result);
+int saveRate=0;
 
 	while (go==0){
-
+		
 		lastTime= timee;
 		t = time(NULL);
      	        tm = *localtime(&t);
@@ -98,27 +99,29 @@ while (go==0){
 
 		priceS = json_object_get_string(yo);
 		price= atof(priceS);  // does this work?
-		printf("price is = %f\n", price); 
+		printf("sym, price, time = %s, %f, %d\n", sym, price, timee); 
 
-		K row = knk(3, ks((S) sym), kf(price), kt(timee));
-		k(c, ".u.upd", ks((S) tableName), row, (K) 0);
+		row = knk(3, ks((S) sym), kf(price), kt(timee));
+		result = k(c, "insert", ks((S) tableNameCpy), row, (K) 0);
+
+ printf("checking response from q: %d\n", result->t);
+		r0(result);		
+
 		
-		/*k(c, "{[x] `XMR_2018 insert x}", row, (K)0);
-		
-		if (saveRate==10){
-			k(c, saveFile, (K) 0);
-			k(c, "", (K)0);
-			printf("should be saved to: %s\n", saveFile); getchar();
+/*		if (saveRate==3){
+			result=k(c, saveFile, (K) 0); r0(result);
+ printf("checking response from q: %d\n", result->t);
+			printf("should be saved to: %s\n", saveFile); getchar();	
 			saveRate=0;
-		}
-		saveRate++;*/
-		r0(c);
+		}*/
+		saveRate++;
 		sleep (refresh);
 	}
 	
+	k(c, saveFile, (K) 0);
+//	k(c, "", (K)0);
 	kclose(c);
-	/*k(c, saveFile, (K) 0);
-	k(c, "", (K)0);*/
+	printf("done!\n");
 }
 return 0;
 
