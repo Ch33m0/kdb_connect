@@ -61,7 +61,7 @@ while (go==0){
 	t = time(NULL);
     tm = *localtime(&t);
 	yearr= tm.tm_year; yearr+=1900; printf("checking integer year: %d\n", yearr); getchar(); // need to adjust given date
-	monthh= tm.tm_mon; monthh++; if(monthh==13){ monthh=1; } //month given is one year behind
+	monthh= tm.tm_mon; monthh++; if(monthh==13){ monthh=1; } //month given is one behind
 	sprintf(year, "%d", yearr); sprintf(month, "%d", monthh);  sprintf(day, "%d", tm.tm_mday); 
 	printf("SYSTEM: year, month, day: %d, %d, %d\n", tm.tm_year, tm.tm_mon, tm.tm_mday);
 	printf("STRING_CONV: year, month, day: %s, %s, %s\n", year, month, day);
